@@ -24,7 +24,7 @@ public class PetRepository {
 
     public void recreateTable(){
         execSQL("DROP TABLE PET IF EXISTS");
-        execSQL("CREATE TABLE PET(id SERIAL, name VARCHAR(255))");
+        execSQL("CREATE TABLE PET(id SERIAL, name VARCHAR(255), owner_id LONG)");
     }
 
 
@@ -65,19 +65,20 @@ public class PetRepository {
         );
     }
 
-    public Pet create(Pet owner){
-        String sqlCreate = "Insert into Pet (name) values (?)";
+    public Pet create(Pet pet){
+        String sqlCreate = "Insert into Pet (name, owner_id) values (?, ?)";
         KeyHolder holder = new GeneratedKeyHolder();
         System.out.println(sqlCreate);
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sqlCreate, Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, owner.getName());
+            ps.setString(1, pet.getName());
+            ps.setLong(2, pet.getOwnerId());
             return ps;
         }, holder);
 
         int newUserId = holder.getKey().intValue();
-        owner.setId(newUserId);
-        return owner;
+        pet.setId(newUserId);
+        return pet;
     }
 
     public void save(Pet owner) {
@@ -133,6 +134,18 @@ public class PetRepository {
 
     public void dropTable(){
         execSQL("DROP TABLE PET IF EXISTS");
+    }
+
+    public List<Pet> findAllByOwnerId(long ownerId) {
+
+        String sqlFindByName = "SELECT * from Pet where owner_id = "+ownerId;
+
+        System.out.println(sqlFindByName);
+        return jdbcTemplate.query(
+                sqlFindByName,
+                new PetMapper()
+        );
+
     }
 
     private class PetMapper implements RowMapper<Pet> {

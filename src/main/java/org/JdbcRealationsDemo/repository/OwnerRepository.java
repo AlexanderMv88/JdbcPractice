@@ -1,21 +1,27 @@
 package org.JdbcRealationsDemo.repository;
 
 import org.JdbcRealationsDemo.entity.Owner;
+import org.JdbcRealationsDemo.entity.Pet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
-import java.sql.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
 
 @Repository
 public class OwnerRepository {
+
+    @Autowired
+    PetRepository petRepository;
 
     @Autowired
     JdbcTemplate jdbcTemplate;
@@ -49,6 +55,16 @@ public class OwnerRepository {
                 sqlFindAll,
                 new OwnerMapper()
         );
+    }
+
+
+    public List<Owner> findAllWithPets(){
+        List<Owner> owners = findAll();
+        for (Owner owner:owners){
+            List<Pet> pets = petRepository.findAllByOwnerId(owner.getId());
+            owner.setPets(pets);
+        }
+        return owners;
     }
 
 
@@ -133,7 +149,21 @@ public class OwnerRepository {
         execSQL("DROP TABLE OWNER IF EXISTS");
     }
 
-    private class OwnerMapper implements RowMapper<Owner> {
+    public Owner createWithPets(Owner owner) {
+
+        Owner savedOwner = create(owner);
+        System.out.println("savedOwner = " + savedOwner);
+        for (Pet pet:savedOwner.getPets()){
+            pet.setOwnerId(savedOwner.getId());
+            petRepository.create(pet);
+            System.out.println("pet = " + pet);
+        }
+
+        return savedOwner;
+
+    }
+
+   private class OwnerMapper implements RowMapper<Owner> {
 
         public Owner mapRow(ResultSet rs, int rowNum) throws SQLException {
             Owner owner = new Owner();

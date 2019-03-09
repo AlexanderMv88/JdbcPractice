@@ -1,7 +1,23 @@
 package org.JdbcRealationsDemo.entity;
 
 
+import lombok.Data;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Data
 public class Owner extends NamedEntity {
+
+
+    private List<Pet> pets;
+
+
+    public Owner addPet(Pet pet){
+        if (pets==null) pets = new ArrayList<>();
+        pets.add(pet);
+        return this;
+    }
 
     public Owner(String name) {
         this.name = name;
